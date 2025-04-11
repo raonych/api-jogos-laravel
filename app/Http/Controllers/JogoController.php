@@ -65,16 +65,14 @@ class JogoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(jogo $jogo)
-    {
-        $id = $jogo; 
-    
-        $findJogo = Jogo::find($jogo);
+    public function show($id)
+    { 
+        $jogo = Jogo::find($id);
     
         return(
-            $findJogo?
+            $jogo?
             Response()->json(['mensagem'=>'Jogo Encontrado',
-            'Jogo' => $findJogo]) :
+            'Jogo' => $jogo]) :
             'Nenhum jogo encontrado'
         );
     }
@@ -83,16 +81,70 @@ class JogoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, jogo $jogo)
+    public function update(Request $request,$id)
     {
-        //
+        $jogo = $request->all();
+    
+        $validatedData = Validator::make($jogo, [
+            'nome' => 'required',
+            'desenvolvedora' => 'required',
+            'sinopse' => 'nullable',
+            'lancamento' => 'nullable|date',
+        ]);
+    
+        if ($validatedData->fails()) {
+            return response()->json([
+                'mensagem' => 'Registros faltantes',
+                'erros' => $validatedData->errors()
+            ], Response::HTTP_NO_CONTENT);
+        }
+        
+        $jogoAtt = Jogo::find($id);
+        
+        if(!$jogoAtt){ 
+        return response()->json([
+            'message' => 'jogo não encontrado'
+        ], 404);
+        }
+        
+        return(
+        $jogoAtt->update($jogo)? 
+           response()->json([
+                'mensagem' => 'Registro atualizado com sucesso',
+                'jogo' => $jogoAtt
+            ], 200) 
+        :
+            response()->json([
+                'mensagem' => 'Erro ao atualizar registro'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR)
+        );
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(jogo $jogo)
+    public function destroy($id)
     {
-        //
+        $jogo = Jogo::find($id);
+
+        if(!$jogo){ 
+        return response()->json([
+            'message' => 'jogo não encontrado'
+        ], 404);
+        }
+    
+
+        return(
+            $jogo->delete()? 
+                response()->json([
+                    'success' => true,
+                    'message' => 'Jogo deletado com sucesso'
+                ], 200)
+            :
+            response()->json([
+                'success' => false,
+                'message' => 'Erro ao deletar o jogo'
+            ], 500)
+        );
     }
 }
